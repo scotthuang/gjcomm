@@ -27,6 +27,7 @@ MGR.debug = MGR.debug || {
 		var debugType = (typeof(type) == 'string') ? 'INFO' : type;
 		var showType = me._typeInfo[type];
 
+		//consoleBubble是个闭包变量，这样就不用每次去dom查找
 		var console = window.console || (function(){
 			var consoleBubble = document.getElementById('consoleBubble');
 			if(consoleBubble == null){
@@ -36,6 +37,7 @@ MGR.debug = MGR.debug || {
 				//容器具体元素
 				var consoleBox = document.createElement('div');
 				var consoleItem = document.createElement('div');
+
 			}
 
 			function log(){
@@ -44,6 +46,11 @@ MGR.debug = MGR.debug || {
 
 				logItem.appendChild(logText);
 				consoleBubble.appendChild(logItem);
+			}
+
+			return {
+				consoleBubble: consoleBubble,
+				log: log
 			}
 		})();
 
