@@ -22,13 +22,37 @@ MGR.debug = MGR.debug || {
 	//是否初始化
 	_inited: false,
 
-	print: function(msg, type, sendFlag){
-		var me = this;
-		var debugType = (typeof(type) == 'string') ? 'INFO' : type;
-		var showType = me._typeInfo[type];
+	//控制台引用
+	_console: null,
 
+	//console样式
+	_cssTextBox: 'position:absolute; display: none; width: 480px; height: 320px; top: 30%; left:35%; border: 1px solid #000; padding:10px;',
+	_cssTextBubble: 'font-size: 12px;',
+
+	print: function(msg, type, sendFlag){
+		console.log(typeof(type) == 'undefined');
+		var debugType = (typeof(type) == 'undefined') ? 'INFO' : type;
+
+		var showType = this._typeInfo[this.TYPE[debugType]][1];
+
+		//判断是否初始化
+		if(!this._inited){
+			this._init();
+			console.log(this._console);
+		}
+
+		if(typeof(sendFlag) == 'boolean' && sendFlag == true){
+			this._report(msg);
+		}
+
+		this._console.log(showType + ' ' + msg);
+	},
+
+	_init: function(){
+		var me = this;
 		//consoleBubble是个闭包变量，这样就不用每次去dom查找
-		var console = window.console || (function(){
+		//this._console = window.console || function(){
+		this._console = (function(){
 			var consoleBubble = document.getElementById('consoleBubble');
 			if(consoleBubble == null){
 				//第一次创建的console容器
@@ -37,32 +61,42 @@ MGR.debug = MGR.debug || {
 				//容器具体元素
 				var consoleBox = document.createElement('div');
 				var consoleItem = document.createElement('div');
+				var consoleClose = document.createElement('a');
 
+				consoleBox.id = 'consoleBox';
+				consoleBox.style.cssText = me._cssTextBox;
+
+				consoleItem.id = 'consoleBubble';
+				consoleItem.style.cssText = me._cssTextBubble;
+				consoleClose.id = 'consoleClose';
+
+				consoleBox.appendChild(consoleItem);
+				consoleBox.appendChild(consoleClose);
+
+				consoleFrag.appendChild(consoleBox);
+				document.body.appendChild(consoleFrag);
+
+				consoleBubble = document.getElementById('consoleBubble');
 			}
 
-			function log(){
-				var logItem = document.createElement('span');
-				var logText = document.createTextNode(showType + msg);
-
-				logItem.appendChild(logText);
-				consoleBubble.appendChild(logItem);
-			}
-
+			this._inited = true;
 			return {
 				consoleBubble: consoleBubble,
 				log: log
 			}
+
+			function log(msg){
+				var logItem = document.createElement('div');
+				var logText = document.createTextNode(msg);
+
+				logItem.appendChild(logText);
+				consoleBubble.appendChild(logItem);
+			}	
+
+			function showConsole(e){
+				e = e || window.event;
+			}
 		})();
-
-		if(typeof(sendFlag) == 'boolean' && sendFlag == true){
-			this._report(msg);
-		}
-
-
-	},
-
-	_init: function(){
-
 	},
 
 	_report: function(msg){
