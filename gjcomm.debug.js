@@ -29,8 +29,10 @@ MGR.debug = MGR.debug || {
 	_cssTextBox: 'position:absolute; display: none; width: 480px; height: 320px; top: 30%; left:35%; border: 1px solid #000; padding:10px;',
 	_cssTextBubble: 'font-size: 12px;',
 
+	//console是否正在显示
+	_consoleFlag: false,
+
 	print: function(msg, type, sendFlag){
-		console.log(typeof(type) == 'undefined');
 		var debugType = (typeof(type) == 'undefined') ? 'INFO' : type;
 
 		var showType = this._typeInfo[this.TYPE[debugType]][1];
@@ -38,7 +40,6 @@ MGR.debug = MGR.debug || {
 		//判断是否初始化
 		if(!this._inited){
 			this._init();
-			console.log(this._console);
 		}
 
 		if(typeof(sendFlag) == 'boolean' && sendFlag == true){
@@ -75,13 +76,13 @@ MGR.debug = MGR.debug || {
 
 				consoleFrag.appendChild(consoleBox);
 				document.body.appendChild(consoleFrag);
+				document.onkeydown = operateConsole;
 
 				consoleBubble = document.getElementById('consoleBubble');
 			}
 
 			this._inited = true;
 			return {
-				consoleBubble: consoleBubble,
 				log: log
 			}
 
@@ -93,8 +94,26 @@ MGR.debug = MGR.debug || {
 				consoleBubble.appendChild(logItem);
 			}	
 
-			function showConsole(e){
+			function operateConsole(e){
 				e = e || window.event;
+
+				if(e.ctrlKey && e.keyCode == 88){
+					//展示控制台
+					toggleConsole();
+				}
+
+			}
+
+			function toggleConsole(){
+				var consoleBox = document.getElementById('consoleBox');
+				if(!me._consoleFlag){
+					consoleBox.style.display = 'block';
+					me._consoleFlag = true;
+				}else{
+					consoleBox.style.display = 'none';
+					me._consoleFlag = false;
+				}
+				consoleBox = null;
 			}
 		})();
 	},
