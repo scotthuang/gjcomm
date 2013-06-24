@@ -9,11 +9,11 @@ MGR.debug = MGR.debug || {
 	},
 
 	_typeInfo: [
-		["qzfl_log_debug", "√"], 
-		["qzfl_log_error", "!"], 
-		["qzfl_log_warning", "-"], 
-		["qzfl_log_info", "i"], 
-		["qzfl_log_profile", "└"]
+		["qzfl_log_debug", "debug"],
+		["qzfl_log_error", "!"],
+		["qzfl_log_warning", "-"],
+		["qzfl_log_info", "i"],
+		["qzfl_log_profile", "p"]
 	],
 
 	//错误是否上报
@@ -32,8 +32,11 @@ MGR.debug = MGR.debug || {
 	//console是否正在显示
 	_consoleFlag: false,
 
+	//debug后台服务器地址
+	_consoleSvr: 'http://guanjia.qq.com/tapi/test.php?',
+
 	print: function(msg, type, sendFlag){
-		var debugType = (typeof(type) == 'undefined') ? 'INFO' : type;
+		var debugType = (typeof(type) == 'undefined' || type == null) ? 'INFO' : type;
 
 		var showType = this._typeInfo[this.TYPE[debugType]][1];
 
@@ -42,7 +45,7 @@ MGR.debug = MGR.debug || {
 			this._init();
 		}
 
-		if(typeof(sendFlag) == 'boolean' && sendFlag == true){
+		if((typeof(sendFlag) == 'boolean' && sendFlag == true) || type == 'ERROR'){
 			this._report(msg);
 		}
 
@@ -61,26 +64,26 @@ MGR.debug = MGR.debug || {
 
 				//容器具体元素
 				var consoleBox = document.createElement('div');
-				var consoleItem = document.createElement('div');
-				var consoleClose = document.createElement('a');
+				var consoleBubble = document.createElement('div');
 
 				consoleBox.id = 'consoleBox';
 				consoleBox.style.cssText = me._cssTextBox;
 
-				consoleItem.id = 'consoleBubble';
-				consoleItem.style.cssText = me._cssTextBubble;
-				consoleClose.id = 'consoleClose';
+				consoleBubble.id = 'consoleBubble';
+				consoleBubble.style.cssText = me._cssTextBubble;
 
-				consoleBox.appendChild(consoleItem);
-				consoleBox.appendChild(consoleClose);
+				consoleBox.appendChild(consoleBubble);
 
 				consoleFrag.appendChild(consoleBox);
 				document.body.appendChild(consoleFrag);
 				document.onkeydown = operateConsole;
 
-				consoleBubble = document.getElementById('consoleBubble');
+				this._inited = true;
+			}else{
+				//如果页面中存在了指定id，则此debug代码失效
+				log = new Function();
 			}
-
+			
 			this._inited = true;
 			return {
 				log: log
@@ -113,12 +116,14 @@ MGR.debug = MGR.debug || {
 					consoleBox.style.display = 'none';
 					me._consoleFlag = false;
 				}
-				consoleBox = null;
 			}
 		})();
 	},
 
 	_report: function(msg){
+		var I = new Image(1, 1);
 
+		I.src = this._consoleSvr + 'debug=' + msg;
+		I.onload = I.onerror = null;
 	}
 };
