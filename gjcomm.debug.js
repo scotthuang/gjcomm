@@ -33,7 +33,8 @@ MGR.debug = MGR.debug || {
 	_consoleFlag: false,
 
 	//debug后台服务器地址
-	_consoleSvr: 'http://guanjia.qq.com/tapi/test.php?',
+	//_consoleSvr: 'http://guanjia.qq.com/tapi/test.php?',
+	_consoleSvr: 'http://guanjia.qq.com?',
 
 	print: function(msg, type, sendFlag){
 		var debugType = (typeof(type) == 'undefined' || type == null) ? 'INFO' : type;
@@ -50,6 +51,14 @@ MGR.debug = MGR.debug || {
 		}
 
 		this._console.log(showType + ' ' + msg);
+	},
+
+	errorReportMode: function(){
+		window.onerror = function(msg,url,line) {
+			var urls = (url || "").replace(/\\/g,"/").split("/");
+			MGR.debug.print(msg + "<br/>" + urls[urls.length - 1] + " (line:" + line + ")", 'ERROR');
+			return false;
+		}
 	},
 
 	_init: function(){
@@ -77,14 +86,12 @@ MGR.debug = MGR.debug || {
 				consoleFrag.appendChild(consoleBox);
 				document.body.appendChild(consoleFrag);
 				document.onkeydown = operateConsole;
-
-				this._inited = true;
 			}else{
 				//如果页面中存在了指定id，则此debug代码失效
 				log = new Function();
 			}
 			
-			this._inited = true;
+			me._inited = true;
 			return {
 				log: log
 			}
@@ -123,7 +130,7 @@ MGR.debug = MGR.debug || {
 	_report: function(msg){
 		var I = new Image(1, 1);
 
-		I.src = this._consoleSvr + 'debug=' + msg;
 		I.onload = I.onerror = null;
+		I.src = this._consoleSvr + 'debug=' + msg;
 	}
 };

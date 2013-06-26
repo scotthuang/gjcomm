@@ -3,7 +3,25 @@
 </html>
 <script type="text/javascript" src="gjcomm.debug.js"></script>
 <script type="text/javascript">
+	MGR.debug.errorReportMode();
 	MGR.debug.print('aaa');
 	MGR.debug.print('aaa', 'ERROR');
-	//MGR.debug.print('aaa', null, true);
+	
+	/*try{
+		test('aaa');
+	}catch(e){
+		//console.log(e);
+		/*for(var i in e){
+			console.log(i + '=>' + e[i]);
+		}*/
+
+		/*console.log(e.message);
+	}
+
+	function test(aaa){
+		console.log(arguments === arguments.callee.arguments);
+		console.log(arguments.callee.arguments.callee.arguments);
+		b();
+	}*/
+	test();
 </script>
