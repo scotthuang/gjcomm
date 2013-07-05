@@ -26,15 +26,14 @@ MGR.debug = MGR.debug || {
 	_console: null,
 
 	//console样式
-	_cssTextBox: 'position:absolute; display: none; width: 480px; height: 320px; top: 30%; left:35%; border: 1px solid #000; padding:10px;',
+	_cssTextBox: 'position:absolute; display: none; width: 50%; height: 60%; top: 10%; left:25%; border: 1px solid #000; padding:10px; background-color:#FFFFFF',
 	_cssTextBubble: 'font-size: 12px;',
 
 	//console是否正在显示
 	_consoleFlag: false,
 
 	//debug后台服务器地址
-	//_consoleSvr: 'http://guanjia.qq.com/tapi/test.php?',
-	_consoleSvr: 'http://guanjia.qq.com?',
+	_consoleSvr: 'http://guanjia.qq.com/tapi/js_log.php?',
 
 	print: function(msg, type, sendFlag){
 		var debugType = (typeof(type) == 'undefined' || type == null) ? 'INFO' : type;
@@ -131,6 +130,6 @@ MGR.debug = MGR.debug || {
 		var I = new Image(1, 1);
 
 		I.onload = I.onerror = null;
-		I.src = this._consoleSvr + 'debug=' + msg;
+		I.src = this._consoleSvr + 'msg=' + encodeURIComponent(msg);
 	}
 };
