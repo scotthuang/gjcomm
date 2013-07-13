@@ -1,3 +1,16 @@
+/**
+ * MGR.debug 通用记录js记录日志同时上报类
+ * @version 1.0
+ * @author scotthuang
+ * @param msg string 打印日志内容
+ * @param type enum[DEBUG, ERROR, WARNING, INFO, PROFILE] 日志类型
+ * @param sendFlag boolean 是否上报
+ * @example 
+ 	MGR.debug.print('aaa');
+	MGR.debug.print('aaa', 'ERROR');
+	MGR.debug.print('aaa', null, true);
+ */
+
 var MGR = MGR || {};
 MGR.debug = MGR.debug || {
 	TYPE: {
@@ -86,7 +99,7 @@ MGR.debug = MGR.debug || {
 				document.body.appendChild(consoleFrag);
 				document.onkeydown = operateConsole;
 			}else{
-				//如果页面中存在了指定id，则此debug代码失效
+				//如果页面中存在了指定id，则此print代码失效
 				log = new Function();
 			}
 			
@@ -106,6 +119,7 @@ MGR.debug = MGR.debug || {
 			function operateConsole(e){
 				e = e || window.event;
 
+				//ctrl+x呼出/关闭控制台
 				if(e.ctrlKey && e.keyCode == 88){
 					//展示控制台
 					toggleConsole();
