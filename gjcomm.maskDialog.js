@@ -5,11 +5,38 @@
  * @description 建立全局的半透明蒙板弹窗
  */
 
+//构建AOP环境来分离逻辑
+Function.prototype.before = function(func){
+	var _self = this;
+	return function(){
+		if(func.apply(this, arguments) === false){
+			return false;
+		}
+		return _self.apply(this, arguments);
+	}
+}
+
+Function.prototype.after = function(func){
+	var _self = this;
+	return function(){
+		var ret = _self.apply(this, arguments);
+		if(ret === false){
+			return false;
+		}
+		func.apply(this, arguments);
+		return ret;
+	}
+}
+
 var MGR = MGR || {};
 MGR.maskDialog = MGR.maskDialog || {
 	//最后的弹窗id
 	_dialogDom: null,
 	_dialogDomList: [],
+
+	//蒙板相关变量
+	_opacity: 0.2,
+	_zIndex: 0,
 
 	show: function(dialogId, opts, zIndex){
 		this._dialogDom = document.getElementById(dialogId);
@@ -17,6 +44,15 @@ MGR.maskDialog = MGR.maskDialog || {
 			return false;
 		}
 
+		opts = opts || {};
+
+		var cssText = 'display: block; position: fixed;_position: abusolute; left: ' + ((opts.left) ? opts.left : '50%;') + 'top: ' + ((opts.top) ? opts.top : '50%;') + 
+		'z-index: ' + zIndex + ';';
+
+		this._dialogDom.style.cssText = cssText;
+		this._dialogDomList.push(this._dialogDom);
+
+	}.after(function(dialogId, opts, zIndex){ //蒙板逻辑与弹窗逻辑分离
 		opts = opts || {};
 
 		//设置静态蒙板层级优先度
@@ -28,26 +64,25 @@ MGR.maskDialog = MGR.maskDialog || {
 		//opts.opacity = isNaN(t) ? 0.2 : t;
 		this.setOpacity(isNaN(t) ? 0.2 : t);
 
-		var cssText = 'display: block; position: fixed;_position: abusolute; left: ' + ((opts.left) ? opts.left : '50%;') + 'top: ' + ((opts.top) ? opts.top : '50%;') + 
-		'z-index: ' + zIndex + ';';
-
-		this._dialogDom.style.cssText = cssText;
-		this._dialogDomList.push(this._dialogDom);
-
 		//打开蒙板
 		this.maskShow();
-	},
+	}),
 
 	close: function(){
+		if(!this._dialogDom){
+			return false;
+		}
+
 		this._dialogDom.style.display = 'none';
 		this._dialogDomList.pop();
 
+	}.after(function(){ //蒙板逻辑与弹窗逻辑分离
 		//关闭蒙板
 		this.maskClose();
-	}
+	})
 };
 
-//静态蒙板变量
+//静态蒙板变量 蒙板相关逻辑
 (function(){
 	//蒙板实例
 	var masker = null;
@@ -96,7 +131,7 @@ MGR.maskDialog = MGR.maskDialog || {
 		count = Math.max(--count, 0);
 
 		if(!count || rmAll){
-			QZFL.dom.removeElement(masker);
+			masker.parentNode.removeChild(masker);
 			masker = null;
 
 			rmAll && (count = 0);
