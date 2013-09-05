@@ -46,7 +46,7 @@ MGR.debug = MGR.debug || {
 	_consoleFlag: false,
 
 	//debug后台服务器地址
-	_consoleSvr: 'http://guanjia.qq.com/tapi/js_log.php?',
+	_consoleSvr: 'http://www.baidu.com',
 
 	print: function(msg, type, sendFlag){
 		var debugType = (typeof(type) == 'undefined' || type == null) ? 'INFO' : type;
