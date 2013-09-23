@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>test</title>
+	<link rel="stylesheet" type="text/css" href="dist/css/bootstrap.min.css">
+	<style type="text/css">
+		.wxGridTop { position: relative; border: 1px solid #DDDDDD; border-radius: 4px 4px 0 0; padding: 45px 15px 0 15px;}
+		.wxGridTitle { color: #BBBBBB; font-size: 12px; font-weight: bold; letter-spacing: 1px; position: absolute; top: 15px; left: 15px; text-transform: uppercase;}
+		.wxGridBottom { background-color: #F7F7F9; border: 1px solid #E1E1E8; border-top: 0; border-radius: 0 0 4px 4px; margin-bottom: 14px; padding: 9px 14px;}
+		.wxGridBottom span { position: relative; display: inline-block;}
+		.wxPager { float: right; top: -7px; left: -1;}
+		.pager { display: inline-block; margin: 0; margin-right: 5px;}
+		.pager li { margin-right: 5px;}
+
+		#box, #operateBar { margin-left: 400px; margin-bottom: 15px;}
+		#searchBar { position: relative; border: 1px solid #DDDDDD; border-radius: 4px; padding: 10px 15px 10px 15px;}
+
+		.searchBtn { float: right;}
+
+		.wxPagerInput { display: inline-block; width: 51px; border-radius: 4px 0 0 4px;}
+		.wxPagerBtn { position: relative; border-radius: 0 4px 4px 0; border-left: 0;}
+		.wxPagerNormalGroup { position: relative; top: 1px;}
+
+		.loadMask { display: none; position: absolute; top: 0; left: 0; opacity: 0.9; width: 100%; height: 100%; background-color: #eeeeee; z-index: 500;}
+		.loadInfo { position: relative; top: 45%; left: 40%; font-weight: bold;}
+	</style>
+</head>
+<body>
+	<div id="operateBar" class="col-md-6">
+		<div id="searchBar">
+			<div class="input-group input-group-sm col-md-3">
+				<span class="input-group-addon">ID</span>
+				<input id="myId" type="text" class="form-control" placeholder="输入您希望查询的id号">
+			</div>
+			<div class="input-group input-group-sm col-md-3">
+				<span class="input-group-addon">姓名</span>
+				<input id="myName" type="text" class="form-control" placeholder="输入您希望查询的人名">
+			</div>
+			<div class="input-group input-group-sm col-md-3">
+				<span class="input-group-addon">日期</span>
+				<input id="myDate" type="text" class="form-control" placeholder="输入您希望查询的日期">
+			</div>
+			<button type="button" class="btn btn-default searchBtn" id="qry">查询</button>
+			<div style="clear:both"></div>
+		</div>
+	</div>
+	<div id="box" class="col-md-6">
+	</div>
+
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="dist/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="widget.grid.js"></script>
+	<script type="text/javascript">
+		var opt = {
+			//表格id
+			id: 'testGrid',
+			//表格渲染目标
+			render: 'box',
+			//表格标题
+			title: '我的好表格',
+			//数据字段map
+			map: [
+				{'index': 'id'},
+				{'index': 'data', 'name': '数据'},
+				{'index': 'id', 'name': '这是渲染列', renderer: function(val){
+					return val + 'xxx';
+				}},
+				{'index': 'id', 'name': '操作', renderer: function(val){
+					return '<span><a href="javascript:void(0)">查看详情</a></span>';
+				}}
+			],
+			//后台cgi
+			ajaxUrl: 'http://scotthuang.qq.com/boot/cgi/data.php',
+			//分页大小
+			pageSize: 15
+		}
+
+		var myGrid = WXJS.UI.GRID.create(opt);
+
+		//搜索相关
+		document.getElementById('qry').addEventListener('click', query);
+
+		function query(){
+			var condition = {
+				id: document.getElementById('myId').value,
+				name: document.getElementById('myName').value,
+				date: document.getElementById('myDate').value
+			}
+
+			myGrid.reload(condition);
+		}
+	</script>
+</body>
+</html>
