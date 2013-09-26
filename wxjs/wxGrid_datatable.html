@@ -37,64 +37,58 @@
 	</div>
 	<div style="float: left; margin-left: 20px;">
 		<textarea id="myTxt" style="border: 1px solid #393939; float: left;" rows="45" cols="120">
-//后台配置
-WXJS.UI.GRID.setGlobalConfig({
-	//前端请求字段配置
-	sendParams: {
-		start: 'start', //开始点（可理解为页数 - 1）
-		limit: 'limit', //长度（pageSize）
-		dir: 'dir', //升序或降序 enum('desc', asc)
-		sort: 'sort' //排序字段
+//兼容datatable的扩展，修改渲染方法和请求方法（以适应所有后台）
+WXJS.UI.GRID.extend({
+	'_sEcho': 0,
+
+	'_generateData': function(data, map){
+		var buff = [], tmp = '';
+		var mapLength = map.length;
+		for(var i = 0; i < data.length; i++){
+			buff.push(['<tr class="', this._getConfig('id'), '_GridTr">'].join(''));
+
+			for(var j = 0; j < data[i].length; j++){
+				if(typeof map[j] != 'undefined'){
+					if(typeof map[j]['renderer'] == 'function')
+						tmp = (map[j]['renderer'])(data[i][j]);
+					else
+						tmp = data[i][j];
+
+					buff.push(['<td class="', this._getConfig('id'), '_GridTd_', j, '">', tmp, '</td>'].join(''))
+				}
+			}
+
+			buff.push('</tr>');
+		}
+
+		return buff.join('');
 	},
 
-	//后台返回配置
-	receiveParams: {
-		total: 'totalCount', //总数
-		data: 'result' //结果集
+	'getProQueryStr': function(){
+		var sEcho = 0, //貌似是datatable按一下就+1，不知道有什么用
+			iColumns = this._getConfig('map').length,
+			iDisplayStart = (this._getConfig('currentPage') - 1) * this._getConfig('pageSize'),
+			iDisplayLength = this._getConfig('pageSize'),
+			params = [];
+
+
+		params.push({'name': 'sEcho', 'value': this._sEcho}); //sEcho
+		params.push({'name': 'iColumns', 'value': iColumns});
+		params.push({'name': 'iDisplayStart', 'value': iDisplayStart});
+		params.push({'name': 'iDisplayLength', 'value': iDisplayLength});
+		this._sEcho++;
+
+		return encodeURI('aoData=' + JSON.stringify(params));
 	}
-});
-
-//表格配置
-var opt = {
-	//表格id(唯一、必填)
-	id: 'testGrid',
-	//表格渲染目标(唯一、必填)
-	render: 'box',
-	//表格标题
-	title: '我的好表格',
-	//数据字段map
-	map: [
-		{'index': 'id', 'sort': true, 'event': {
-			'click': function(e, data, me){
-				alert('你正在点击列');
-			}
-		}},
-		{'index': 'data', 'name': '数据', 'sort': true},
-		{'index': 'id', 'name': '这是渲染列', renderer: function(val){
-			return val + 'xxx';
-		}},
-		{'index': 'id', 'name': '操作', renderer: function(val){
-			return '<span><a href="javascript:void(0)">查看详情</a></span>';
-		}}
-	],
-	//后台cgi
-	ajaxUrl: '/boot/cgi/data.php?action=test',
-	//分页大小
-	pageSize: 20,
-
-	//全局行绑定点击事件(e点击事件,data该行数据,me点击元素)
-	globalEvent: function(e, data, me){
-		alert('你正在点击行');
-	}
-}
-
-var myGrid = WXJS.UI.GRID.create(opt);
+})
 		</textarea>
 		<div><a style="font-size:16px; font-weight:bold;" href="javascript:void(0)" onclick="exexCode();return false;">执行代码</a></div>
 	</div>
+	<script type="text/javascript" src="http://pc2.gtimg.com/js/json2-min.js?t=201107131033"></script>
 	<script type="text/javascript" src="js/jquery.js"></script>
 	<script type="text/javascript" src="dist/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="js/widget.grid.js"></script>
+	<script type="text/javascript" src="js/widget.grid.datatable.js"></script>
 	<script type="text/javascript">
 		function exexCode(){
 			var txt = document.getElementById('myTxt').value;
@@ -115,10 +109,10 @@ var myGrid = WXJS.UI.GRID.create(opt);
 				sort: 'sort' //排序字段
 			},
 
-			//后台返回配置
+			//兼容datatable尝试
 			receiveParams: {
-				total: 'totalCount', //总数
-				data: 'result' //结果集
+				total: 'OnlineDetails.iTotalRecords', //总数
+				data: 'OnlineDetails.aaData' //结果集
 			}
 		});
 
@@ -146,7 +140,7 @@ var myGrid = WXJS.UI.GRID.create(opt);
 				}}
 			],
 			//后台cgi
-			ajaxUrl: '/boot/cgi/data.php?action=test',
+			ajaxUrl: '/boot/cgi/data_datatable.php?action=test',
 			//分页大小
 			pageSize: 20,
 
