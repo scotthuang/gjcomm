@@ -5,8 +5,9 @@
 	<title>test</title>
 	<link rel="stylesheet" type="text/css" href="dist/css/bootstrap.min.css">
 	<link rel="stylesheet" type="text/css" href="css/widget.grid.css">
+	<link rel="stylesheet" type="text/css" href="css/widget.grid.change.css">
 	<style type="text/css">
-		#box, #operateBar { margin-bottom: 15px; float: none;}
+		#box, #box2, #operateBar { margin-bottom: 15px; float: none;}
 		#searchBar { position: relative; border: 1px solid #DDDDDD; border-radius: 4px; padding: 10px 15px 10px 15px;}
 
 		.searchBtn { float: right;}
@@ -33,6 +34,8 @@
 			</div>
 		</div>
 		<div id="box">
+		</div>
+		<div id="box2">
 		</div>
 	</div>
 	<div style="float: left; margin-left: 20px;">
@@ -92,9 +95,11 @@ var myGrid = WXJS.UI.GRID.create(opt);
 		</textarea>
 		<div><a style="font-size:16px; font-weight:bold;" href="javascript:void(0)" onclick="exexCode();return false;">执行代码</a></div>
 	</div>
+	<a href="javascript:void(0)" onclick="myGrid.getSelectColumns()">获得所选表格数据<a>
 	<script type="text/javascript" src="js/jquery.js"></script>
 	<script type="text/javascript" src="dist/js/bootstrap.min.js"></script>
-	<script type="text/javascript" src="js/widget.grid.js"></script>
+	<!-- <script type="text/javascript" src="js/widget.grid.js"></script> -->
+	<script type="text/javascript" src="js/widget.grid_v2.js"></script>
 	<script type="text/javascript">
 		function exexCode(){
 			var txt = document.getElementById('myTxt').value;
@@ -129,7 +134,9 @@ var myGrid = WXJS.UI.GRID.create(opt);
 			//表格渲染目标(唯一、必填)
 			render: 'box',
 			//表格标题
-			title: '我的好表格',
+			title: '表格标题',
+			//是否支持多选
+			mutiSelect: true,
 			//数据字段map
 			map: [
 				{'index': 'id', 'sort': true, 'event': {
@@ -152,23 +159,65 @@ var myGrid = WXJS.UI.GRID.create(opt);
 
 			//全局行绑定点击事件(e点击事件,data该行数据,me点击元素)
 			globalEvent: function(e, data, me){
-				alert('你正在点击行');
+				//alert('你正在点击行');
 			}
 		}
 
 		var myGrid = WXJS.UI.GRID.create(opt);
+
+		var opt2 = {
+			//表格id(唯一、必填)
+			id: 'testGrid2',
+			//表格渲染目标(唯一、必填)
+			render: 'box2',
+			//表格标题
+			title: '表格标题',
+			//是否支持多选
+			mutiSelect: true,
+			//数据字段map
+			map: [
+				{'index': 'id', 'sort': true, 'event': {
+					'click': function(e, data, me){
+						alert('你正在点击列');
+					}
+				}},
+				{'index': 'data', 'name': '数据', 'sort': true},
+				{'index': 'id', 'name': '这是渲染列', renderer: function(val){
+					return val + 'xxx';
+				}},
+				{'index': 'id', 'name': '操作', renderer: function(val){
+					return '<span><a href="javascript:void(0)">查看详情</a></span>';
+				}}
+			],
+			//后台cgi
+			ajaxUrl: '/boot/cgi/data.php?action=test',
+			//分页大小
+			pageSize: 20,
+
+			//全局行绑定点击事件(e点击事件,data该行数据,me点击元素)
+			globalEvent: function(e, data, me){
+				//alert('你正在点击行');
+			}
+		}
+
+		var myGrid2 = WXJS.UI.GRID.create(opt2);
 
 		//搜索相关
 		document.getElementById('qry').addEventListener('click', query);
 
 		function query(){
 			var condition = {
-				id: document.getElementById('myId').value,
-				name: document.getElementById('myName').value,
-				date: document.getElementById('myDate').value
+				'get': {
+					a: 'b'
+				},
+
+				'post': {
+					c: 'd'
+				}
 			}
 
-			myGrid.reload(condition);
+			//搜索时或者紧紧变动参数而不修改表格字段情况加参数true
+			myGrid.reload(condition, true);
 		}
 	</script>
 </body>

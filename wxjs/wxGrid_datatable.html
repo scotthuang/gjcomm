@@ -87,7 +87,8 @@ WXJS.UI.GRID.extend({
 	<script type="text/javascript" src="http://pc2.gtimg.com/js/json2-min.js?t=201107131033"></script>
 	<script type="text/javascript" src="js/jquery.js"></script>
 	<script type="text/javascript" src="dist/js/bootstrap.min.js"></script>
-	<script type="text/javascript" src="js/widget.grid.js"></script>
+	<!-- <script type="text/javascript" src="js/widget.grid.js"></script> -->
+	<script type="text/javascript" src="js/widget.grid_v2.js"></script>
 	<script type="text/javascript" src="js/widget.grid.datatable.js"></script>
 	<script type="text/javascript">
 		function exexCode(){
@@ -126,12 +127,12 @@ WXJS.UI.GRID.extend({
 			title: '我的好表格',
 			//数据字段map
 			map: [
-				{'index': 'id', 'sort': true, 'event': {
+				{'index': 'id', 'sort': true, 'search': true, 'event': {
 					'click': function(e, data, me){
 						alert('你正在点击列');
 					}
 				}},
-				{'index': 'data', 'name': '数据', 'sort': true},
+				{'index': 'data', 'search': true, 'name': '数据', 'sort': true},
 				{'index': 'id', 'name': '这是渲染列', renderer: function(val){
 					return val + 'xxx';
 				}},
@@ -157,9 +158,13 @@ WXJS.UI.GRID.extend({
 
 		function query(){
 			var condition = {
-				id: document.getElementById('myId').value,
-				name: document.getElementById('myName').value,
-				date: document.getElementById('myDate').value
+				'get': {
+					a: 'b'
+				},
+
+				'post': {
+					c: 'd'
+				}
 			}
 
 			myGrid.reload(condition);
