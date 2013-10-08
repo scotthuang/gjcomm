@@ -117,14 +117,14 @@ WXJS.UI.GRID = {
 	 * 设置表格全局配置
 	 */
 	setGlobalConfig: function(opt){
-		_config = opt;
+		this._config = opt;
 	},
 
 	/**
 	 * 读取表格全局配置
 	 */
 	getGlobalConfig: function(baseKey, key){
-		return _config[baseKey][key];
+		return this._config[baseKey][key];
 	},
 
 	/**
