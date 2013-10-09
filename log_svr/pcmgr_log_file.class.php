@@ -9,7 +9,7 @@
 		//memcache配置
 		private $_memcache;
 		private $_mem_host = '1.1.1.1';
-		private $_mem_port = 1;
+		private $_mem_port = 11;
 
 		//日志存在基本路径
 		private $_basedir = '/var/log/';
