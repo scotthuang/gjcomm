@@ -8,7 +8,9 @@
  * @update 相比1.0可以支持多表格
  */
 
-// // TODO TOOL类中方法解耦
+// // TODO 
+// TOOL类中方法解耦
+// style属性需要支持多规则，不应该仅仅支持width，需要改进 function: _generateThead
 
 var WXJS = WXJS || {};
 WXJS.UI = WXJS.UI || {};
@@ -122,6 +124,24 @@ WXJS.UI.GRID = {
 
 	/**
 	 * 读取表格全局配置
+	 * 
+	 * @param {object} options
+	 * @example
+	 * WXJS.UI.GRID.setGlobalConfig({
+	 *		//前端请求字段配置
+	 *		sendParams: {
+	 *			start: 'start', //开始点（可理解为页数 - 1）
+	 *			limit: 'limit', //长度（pageSize）
+	 *			dir: 'dir', //升序或降序 enum('desc', asc)
+	 *			sort: 'sort' //排序字段
+	 *		},
+ 	 *
+	 *		//后台返回配置
+	 *		receiveParams: {
+	 *			total: 'totalCount', //总数
+	 *			data: 'result' //结果集
+	 *		}
+	 *	});
 	 */
 	getGlobalConfig: function(baseKey, key){
 		return this._config[baseKey][key];
@@ -179,6 +199,56 @@ WXJS.UI.GRID = {
  * 创建GRID对象
  *
  * @param {object} options
+ * @param {string} options.id 表格表示（全局唯一，是table的id）
+ * @param {string} options.render 表格渲染对象（全局唯一）
+ * @param {string} options.title 表格表格标题
+ * @param {object} options.map 表格字段配置
+ * @param {string} options.map.index 数据key
+ * @param {string} options.map.name 数据渲染标题
+ * @param {enum['left', 'center', 'right']} options.map.align 表格单元对齐
+ * @param {function} options.map.renderer 数据渲染处理
+ * @param {string} options.ajaxUrl 后台请求url
+ * @param {int} options.pageSize 请求分页大小
+ * @param {function} options.globalEvent 表格行点击事件
+ * @example
+ * //表格配置
+ *	var opt = {
+ *		//表格id(唯一、必填)
+ *		id: 'testGrid',
+ *		//表格渲染目标(唯一、必填)
+ *		render: 'box',
+ *		//表格标题
+ *		title: '表格标题',
+ *		//是否支持多选
+ *		mutiSelect: true,
+ *		//数据字段map
+ *		map: [
+ *			{'index': 'id', 'sort': true, 'event': {
+ *				'click': function(e, data, me){
+ *					alert('你正在点击列');
+ *				}
+ *			}},
+ *			{'index': 'data', 'name': '数据', 'sort': true},
+ *			{'index': 'id', 'name': '这是渲染列', renderer: function(val){
+ *				return val + 'xxx';
+ *			}},
+ *			{'index': 'id', 'name': '操作', renderer: function(val){
+ *				return '<span><a href="javascript:void(0)">查看详情</a></span>';
+ *			}}
+ *		],
+ *		//后台cgi
+ *		ajaxUrl: '/boot/cgi/data.php',
+ *		//分页大小
+ *		pageSize: 20,
+ *
+ *		//全局行绑定点击事件(e点击事件,data该行数据,me点击元素)
+ *		globalEvent: function(e, data, me){
+ *			//alert('你正在点击行');
+ *		}
+ *	}
+ *
+ *	var myGrid = WXJS.UI.GRID.create(opt);
+ *
  * @return Object 返回 WXJS.UI.GRIDOBJECT
  * @constructor
  * @see WXJS.UI.GRID
@@ -188,6 +258,9 @@ WXJS.UI.GRIDOBJECT = function(opt){
 
 	//更改this引用
 	var me = this;
+
+	//是否直接加载数据
+	var init = (typeof opt['init'] == 'boolean') ? opt['init'] : true;
 
 	//渲染目标不存在则返回
 	dom = (typeof opt['render'] == 'string') ? WXJS.TOOL.$(opt['render']) : (typeof opt['render'] == 'object') ? opt['render'] : null;
@@ -230,7 +303,7 @@ WXJS.UI.GRIDOBJECT = function(opt){
 	me.pageInit();
 
 	//初始化数据
-	me.reload();
+	!init || me.reload();
 }
 
 /**
@@ -350,11 +423,12 @@ WXJS.UI.GRIDOBJECT.prototype.gridInit = function(){
 		WXJS.TOOL.$(this._getConfig('id') + '_GridTitle').innerHTML = this._getConfig('title');
 	}
 
-	WXJS.TOOL.jq('#' + theadId + ' .' + WXJS.UI.GRID._sortOperator).bind('click', theadSort);
+	//WXJS.TOOL.jq('#' + theadId + ' .' + WXJS.UI.GRID._sortOperator).bind('click', theadSort); //对排序按钮加事件
+	WXJS.TOOL.jq('#' + theadId + ' .' + WXJS.UI.GRID._sortStyle).bind('click', theadSort); //对th加事件
 
 	//绑定排序事件
 	function theadSort(){
-		var sortStatus = this.lastElementChild.getAttribute('data-sort'),
+		var sortStatus = this.getAttribute('data-sort'),
 			newStatus = '',
 			newStyle = '';
 
@@ -362,19 +436,19 @@ WXJS.UI.GRIDOBJECT.prototype.gridInit = function(){
 		me._setConfig('currentPage', 1);
 
 		WXJS.TOOL.jq('#' + theadId + ' span').each(function(){
-			WXJS.TOOL.jq(this).hasClass(_displayDisable) || WXJS.TOOL.jq(this).addClass(_displayDisable)
+			WXJS.TOOL.jq(this).hasClass(WXJS.UI.GRID._displayDisable) || WXJS.TOOL.jq(this).addClass(WXJS.UI.GRID._displayDisable)
 			this.setAttribute('data-sort', '');
 		})
 
 		newStatus = (sortStatus == null || sortStatus == '') ? 'desc' : (sortStatus == 'desc') ? 'asc' : 'desc';
-		newStyle = (newStatus == 'desc') ? _sortDownIcon : _sortUpIcon;
+		newStyle = (newStatus == 'desc') ? WXJS.UI.GRID._sortDownIcon : WXJS.UI.GRID._sortUpIcon;
 
-		this.lastElementChild.setAttribute('data-sort', newStatus);
+		this.setAttribute('data-sort', newStatus);
 
-		WXJS.TOOL.jq(this).find('.' + newStyle).removeClass(_displayDisable);
+		WXJS.TOOL.jq(this).find('.' + newStyle).removeClass(WXJS.UI.GRID._displayDisable);
 
 		//设置配置发请求
-		me._setConfig('sort', this.getAttribute('data-index'));
+		me._setConfig('sort', this.parentNode.getAttribute('data-index'));
 		me._setConfig('dir', newStatus);
 
 		me.reload();
@@ -387,15 +461,24 @@ WXJS.UI.GRIDOBJECT.prototype.gridInit = function(){
  * 2、成员有name则渲染name，否则渲染index
  */
 WXJS.UI.GRIDOBJECT.prototype._generateThead = function(map){
-	var buff = [], tmp, sortStyle, style, i;
+	var buff = [], 
+		tmp, 
+		sortStyle,
+		widthStyle, 
+		style, 
+		i;
+
 	for(i = 0; i < map.length; i++){
 		tmp = map[i]['name'] || map[i]['index'];
 
 		sortStyle = (typeof map[i]['sort'] == 'undefined') ? '' : WXJS.UI.GRID._sortStyle;
+		//style属性需要支持多规则，不应该仅仅支持width，需要改进
+		widthStyle = (typeof map[i]['width'] == 'undefined') ? '' : [parseInt(map[i]['width']), 'px'].join('');
 
 		buff.push(
 			[
-				'<th class="wxThead ', sortStyle, 
+				'<th class="wxThead ', sortStyle,
+				'" style="width: ', widthStyle, 
 				'" data-index="', map[i]['index'], 
 				'">'
 			].join('')
@@ -472,7 +555,10 @@ WXJS.UI.GRIDOBJECT.prototype._getConfig = function(key){
 }
 
 /**
- * 读取原生数据
+ * 按索引读原生数据(私有api 非拓展表格功能请勿使用)
+ * @example:
+ *  	config: { data: ['a', 'b', 'c']}
+ *		grid._getRowData(0); //a
  */
 WXJS.UI.GRIDOBJECT.prototype._getRowData = function(index){
 	return this._getConfig('data')[index];
@@ -487,7 +573,7 @@ WXJS.UI.GRIDOBJECT.prototype._getRowData = function(index){
  *		'get': {
  *			a: 'b'
  *		},
-	 *
+ *
  *		'post': {
  *			c: 'd'
  *		}
@@ -511,7 +597,14 @@ WXJS.UI.GRIDOBJECT.prototype.reload = function(condition, flag){
 
 	WXJS.TOOL.ajax({
 		type: 'POST',
-		url: this._getConfig('ajaxUrl') + '&' + this.getBaseQueryStr() + '&' + parseCondition()['get'],
+		url: [
+			this._getConfig('ajaxUrl'),
+			this._getConfig('ajaxUrl').indexOf('?') < 0 ? '?' : '&',
+			this.getBaseQueryStr(),
+			'&',
+			parseCondition()['get']
+		].join(''),
+		
 		dataType: 'json',
 		data: this.getProQueryStr() + '&' + parseCondition()['post'],
 		success: function(data){
@@ -658,11 +751,11 @@ WXJS.UI.GRIDOBJECT.prototype._bind = function(){
 		if(typeof globalEvents[i] != 'function') continue;
 
 		//再封装一层闭包传入i防止闭包传入引用
-		(function(index){
+		(function(index, globalEvents){
 			WXJS.TOOL.jq(['.', girdId, '_GridTr'].join('')).bind('click', (function(e){
 				packageEvent(e, this, globalEvents[index]);
 			}));
-		})(i)
+		})(i, globalEvents)
 		
 		cursorFlag || WXJS.TOOL.jq('#' + girdId + ' tbody').css('cursor', 'pointer');
 		cursorFlag = true;
@@ -673,11 +766,11 @@ WXJS.UI.GRIDOBJECT.prototype._bind = function(){
 		if(typeof this._getConfig('map')[i]['event'] == 'object'){
 			for(var j in this._getConfig('map')[i]['event']){
 				//再封装一层闭包传入i, j防止闭包传入引用
-				(function(i, j){
+				(function(i, j, me){
 					WXJS.TOOL.jq(['.', girdId, '_GridTd_', i].join('')).bind(j, (function(e){
 						packageEvent(e, this, me._getConfig('map')[i]['event'][j])
 					}));
-				})(i, j)
+				})(i, j, me)
 
 				//阻止事件传递
 				WXJS.TOOL.jq(['.', girdId, '_GridTd_', i].join('')).bind(j, function(e){
@@ -691,7 +784,9 @@ WXJS.UI.GRIDOBJECT.prototype._bind = function(){
 
 	//恶心的逻辑获取事件列的父tr，计算相对位置并返回原生数据（要重构）
 	function packageEvent(e, obj, func){
-		var index = WXJS.TOOL.jq(obj).parent().index(),
+		var nodeName = obj.nodeName.toLowerCase(),
+			index = (nodeName == 'td' ? WXJS.TOOL.jq(obj).parent().index() : WXJS.TOOL.jq(obj).index()),
+
 			rowData = me._getRowData(index);
 
 		func(e, rowData, obj);
@@ -714,26 +809,23 @@ WXJS.UI.GRIDOBJECT.prototype.pageInit = function(){
 		Next = [gridId, '_Next'].join(''),
 		GoPage = [gridId, '_GoPage'].join(''),
 
-		//只计算一次，避免浪费计算
-		totalPage = Math.ceil(this._getConfig('totalCount') / this._getConfig('pageSize')),
-
 		me = this;
 
 	//用闭包传入不同的this引用
 	(function(me){
 		WXJS.TOOL.bind(Previous, 'click', function(){
-			previous(me);
+			previous(me, this);
 		});
 		WXJS.TOOL.bind(Next, 'click', function(){
-			next(me);
+			next(me, this);
 		});
 		WXJS.TOOL.bind(GoPage, 'click', function(){
 			goPage(me);
 		});
 	})(me)
 	
-	function previous(me){
-		if(!_checkDisable(this)) return;
+	function previous(me, obj){
+		if(!_checkDisable(obj)) return;
 
 		var currentPage = (me._getConfig('currentPage') == 1) ? 1 : me._getConfig('currentPage') - 1;
 		me._setConfig('currentPage', currentPage);
@@ -741,10 +833,12 @@ WXJS.UI.GRIDOBJECT.prototype.pageInit = function(){
 		me.reload();
 	}
 
-	function next(me){
-		if(!_checkDisable(this)) return;
+	function next(me, obj){
+		if(!_checkDisable(obj)) return;
 
-		var currentPage = (me._getConfig('currentPage') == totalPage) ? totalPage : me._getConfig('currentPage') + 1;
+		var totalPage = Math.ceil(me._getConfig('totalCount') / me._getConfig('pageSize')), 
+			currentPage = (me._getConfig('currentPage') == totalPage) ? totalPage : me._getConfig('currentPage') + 1;
+
 		me._setConfig('currentPage', currentPage);
 
 		me.reload();
@@ -755,8 +849,14 @@ WXJS.UI.GRIDOBJECT.prototype.pageInit = function(){
 	}
 
 	function goPage(me){
-		var page = WXJS.TOOL.jq('#' + me._getConfig('id') + '_SetPage').val();
-		var currentPage = isNaN(parseInt(page)) ? me._getConfig('currentPage') : parseInt(page);
+		var totalPage = Math.ceil(me._getConfig('totalCount') / me._getConfig('pageSize')),
+			page = WXJS.TOOL.jq('#' + me._getConfig('id') + '_SetPage').val(),
+			currentPage = parseInt(page);
+
+		if(currentPage < 1 || currentPage > totalPage || isNaN(currentPage)){
+			return;
+		}
+
 		me._setConfig('currentPage', currentPage);
 
 		me.reload();
@@ -780,13 +880,13 @@ WXJS.UI.GRIDOBJECT.prototype._renderPageInfo = function(){
 		pageStart = (this._getConfig('currentPage') - 1) * this._getConfig('pageSize') + 1;
 		totalPage = Math.ceil(this._getConfig('totalCount') / this._getConfig('pageSize'));
 
-	WXJS.TOOL.$(currentPage).innerHTML = this._getConfig('currentPage');
-	WXJS.TOOL.$(TotalPage).innerHTML = totalPage;
-	WXJS.TOOL.$(TotalCount).innerHTML = this._getConfig('totalCount');
-	WXJS.TOOL.$(PageStart).innerHTML = pageStart;
+	WXJS.TOOL.jq('#' + currentPage).html(this._getConfig('currentPage'));
+	WXJS.TOOL.jq('#' + TotalPage).html(totalPage);
+	WXJS.TOOL.jq('#' + TotalCount).html(this._getConfig('totalCount'));
+	WXJS.TOOL.jq('#' + PageStart).html(pageStart);
 
 	//最后一页的判断逻辑
-	WXJS.TOOL.$(PageLimit).innerHTML = (this._getConfig('currentPage') == totalPage) ? this._getConfig('totalCount') : pageStart + this._getConfig('pageSize') - 1;
+	WXJS.TOOL.jq('#' + PageLimit).html((this._getConfig('currentPage') == totalPage) ? this._getConfig('totalCount') : pageStart + this._getConfig('pageSize') - 1);
 }
 
 //表格扩展相关api----------------------------------------------------------------------------

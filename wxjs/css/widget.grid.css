@@ -1,7 +1,10 @@
-/*!
- * Widget Grid Style
- * author scotthuang
- * @coding utf8
+@charset "UTF-8";
+/**
+ * wxui.grid stylesheet
+ *
+ * @authors scotthuang (scotthuang@tencent.com)
+ * @date    2013-10-10 21:05:48
+ * @version 1.0
  */
 .wxGridTop { position: relative; border: 1px solid #DDDDDD; border-radius: 4px 4px 0 0; padding: 45px 15px 0 15px;}
 .wxGridTitle { color: #BBBBBB; font-size: 12px; font-weight: bold; letter-spacing: 1px; position: absolute; top: 15px; left: 15px; text-transform: uppercase;}
@@ -12,15 +15,24 @@
 .wxPagerHack { display: inline-block; margin: 0; margin-right: 5px;}
 .wxPagerHack li { margin-right: 5px;}
 
-.wxPagerInput { display: inline-block; width: 51px; border-radius: 4px 0 0 4px;}
+.wxPagerInput { display: inline-block !important; width: 51px; border-radius: 4px 0 0 4px !important; margin-bottom: 0 !important;}
 .wxPagerBtn { position: relative; border-radius: 0 4px 4px 0; border-left: 0;}
 .wxPagerNormalGroup { position: relative; top: 1px;}
 
 .wxLoadMask { display: none; position: absolute; top: 0; left: 0; opacity: 0.9; width: 100%; height: 100%; background-color: #eeeeee; z-index: 500;}
 .wxLoadInfo { position: relative; top: 45%; left: 40%; font-weight: bold;}
 
-.wxGridTheadSort:hover { background-color: #e3e3e3; cursor: pointer;}
-.wxThead span { float: right;}
+.wxSort:hover { cursor: pointer;}
+
+.wxThead { vertical-align: middle !important;}
+.wxThead .wxSort { display: inline-block; position: relative; float: right; top: 0;}
+.wxThead .wxSortText { top: 4px;}
+.wxThead span { display: block; font-size: 11px;}
+.wxThead .glyphicon-chevron-down { left: -1px;}
 .wxUnshown { display: none}
+.wxSortDisable { color: #e9e9e9;}
+
 .wxHideOutline { outline: none !important;}
 .wxNotFloat { float: none !important;}
+
+.wxGridTheadSort { cursor: pointer;}
