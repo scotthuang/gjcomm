@@ -448,7 +448,7 @@ WXJS.UI.GRIDOBJECT.prototype.gridInit = function(){
 		WXJS.TOOL.jq(this).find('.' + newStyle).removeClass(WXJS.UI.GRID._displayDisable);
 
 		//设置配置发请求
-		me._setConfig('sort', this.parentNode.getAttribute('data-index'));
+		me._setConfig('sort', this.getAttribute('data-index'));
 		me._setConfig('dir', newStatus);
 
 		me.reload();
@@ -673,7 +673,7 @@ WXJS.UI.GRIDOBJECT.prototype.reload = function(condition, flag){
 		}else{
 			WXJS.TOOL.jq('#' + Previous).parent().removeClass(WXJS.UI.GRID._disableStyle);
 		}
-		if(me._getConfig('currentPage') == totalPage){
+		if(me._getConfig('currentPage') == totalPage || 0 == totalPage){
 			WXJS.TOOL.jq('#' + Next).parent().addClass(WXJS.UI.GRID._disableStyle);
 		}else{
 			WXJS.TOOL.jq('#' + Next).parent().removeClass(WXJS.UI.GRID._disableStyle);
