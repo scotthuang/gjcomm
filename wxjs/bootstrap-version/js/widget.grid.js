@@ -1,21 +1,15 @@
 /**
  * WXJS.UI.GRID 微信itil展示型表格组件
  *
- * @version 2.1
+ * @version 2.0
  * @author scotthuang
  *
- * @desc 要注意：
- *       1、css需要关联bootstrap
- *       2、从2.1开始必须使用jquery
- *       
+ * @desc 要注意：1、代码与jquery耦合，使用请注意在WXJS.TOOL中更改工具方法 2、css需要关联bootstrap
  * @update 相比1.0可以支持多表格
- * @date 2013-10-24 16:12:00
  */
 
 // // TODO 
 // style属性需要支持多规则，不应该仅仅支持width，需要改进 function: _generateThead
-// 搜索样式是有了，但功能需要在after里面加，这里看下能不能同步配置功能
-// 搜索和排序同时存在时事件有叠加
 
 var WXJS = WXJS || {};
 WXJS.UI = WXJS.UI || {};
@@ -612,8 +606,8 @@ WXJS.UI.GRIDOBJECT.prototype._generateData = function(data, map){
 		for(var j = 0; j < mapLength; j++){
 			raw = renderType ? data[i][j] : data[i][map[j]['index']];
 
-			if(raw || renderType || map[j]['ignore']){ //ignore的作用是不管你有没有数据，都必须渲染
-				if(typeof map[j]['renderer'] == 'function'){ 
+			if((raw || renderType) && !map[j]['ignore']){ //ignore的作用是忽略数据渲染，例如多选框
+				if(typeof map[j]['renderer'] == 'function'){
 					/*
 					 * function(val, row){
 					 *     console.log(val);
