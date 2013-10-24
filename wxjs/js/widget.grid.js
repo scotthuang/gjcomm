@@ -1,16 +1,21 @@
 /**
  * WXJS.UI.GRID 微信itil展示型表格组件
  *
- * @version 2.0
+ * @version 2.1
  * @author scotthuang
  *
- * @desc 要注意：1、代码与jquery耦合，使用请注意在WXJS.TOOL中更改工具方法 2、css需要关联bootstrap
+ * @desc 要注意：
+ *       1、css需要关联bootstrap
+ *       2、从2.1开始必须使用jquery
+ *       
  * @update 相比1.0可以支持多表格
+ * @date 2013-10-24 16:12:00
  */
 
 // // TODO 
-// TOOL类中方法解耦
 // style属性需要支持多规则，不应该仅仅支持width，需要改进 function: _generateThead
+// 搜索样式是有了，但功能需要在after里面加，这里看下能不能同步配置功能
+// 搜索和排序同时存在时事件有叠加
 
 var WXJS = WXJS || {};
 WXJS.UI = WXJS.UI || {};
@@ -25,7 +30,9 @@ WXJS.UI.GRID = {
 	 * 表格样式
 	 * @type String
 	 */
-	_commonStyle: 'table table-bordered table-striped table-hover',
+	//_commonStyle: 'table table-bordered table-striped table-hover', //git上的样式
+	_commonStyle: 'table table-bordered table-striped table-hover table-condensed', //微信用的样式
+
 
 	/**
 	 * 排序字段子样式
@@ -38,6 +45,12 @@ WXJS.UI.GRID = {
 	 * @type String
 	 */
 	_sortOperator: 'wxSort',
+
+	/**
+	 * 表头头中加入搜索后对排序样式调整
+	 * @type {String}
+	 */
+	_wxSortTextStyle: 'wxSortText',
 
 	/**
 	 * 降序排序Icon
@@ -73,7 +86,10 @@ WXJS.UI.GRID = {
 	 * 表格模版
 	 * @type String
 	 */
-	_tpl: '<div id="<%gridID%>_MainBox"><div id="<%gridID%>_GridBox" class="wxGridTop"><div id="<%gridID%>_GridTitle" class="wxGridTitle">表格标题</div><div id="<%gridID%>_mask" class="wxLoadMask"><div class="wxLoadInfo"><img src="http://wx.itil.com/image/ajax-loader-3.gif">正在加载中，请稍后</div></div></div><div id="<%gridID%>_PageBar" class="wxGridBottom"><span id="<%gridID%>_PageInfo">当前第 <span id="<%gridID%>_CurrentPage">1</span> 页(第 <span id="<%gridID%>_PageStart">1</span> 条到第 <span id="<%gridID%>_PageLimit">20</span> 条)，共 <span id="<%gridID%>_TotalPage">234</span> 页(总共<span id="<%gridID%>_TotalCount">10086</span> 条记录)</span><span class="wxPager"><ul class="pager wxPagerHack wxPagerNormalGroup"><li class="previous"><a class="wxHideOutline wxNotFloat" id="<%gridID%>_Previous" href="javascript:void(0)">上一页</a></li><li class="next"><a class="wxHideOutline wxNotFloat" id="<%gridID%>_Next" href="javascript:void(0)">下一页</a></li></ul><span class="goPager"><input id="<%gridID%>_SetPage" type="text" class="form-control wxPagerInput"><button id="<%gridID%>_GoPage" class="btn btn-default wxPagerBtn" type="button">Go</button></span></span></div></div>',
+	//git用的模版
+	//_tpl: '<div id="<%gridID%>_MainBox"><div id="<%gridID%>_GridBox" class="wxGridTop"><div id="<%gridID%>_GridTitle" class="wxGridTitle">表格标题</div><div id="<%gridID%>_mask" class="wxLoadMask"><div class="wxLoadInfo"><img src="http://wx.itil.com/image/ajax-loader-3.gif">正在加载中，请稍后</div></div></div><div id="<%gridID%>_PageBar" class="wxGridBottom"><span id="<%gridID%>_PageInfo">当前第 <span id="<%gridID%>_CurrentPage">0</span> 页(第 <span id="<%gridID%>_PageStart">1</span> 条到第 <span id="<%gridID%>_PageLimit">20</span> 条)，共 <span id="<%gridID%>_TotalPage">0</span> 页(总共<span id="<%gridID%>_TotalCount">10086</span> 条记录)</span><span class="wxPager"><ul class="pager wxPagerHack wxPagerNormalGroup"><li class="previous"><a class="wxHideOutline wxNotFloat" id="<%gridID%>_Previous" href="javascript:void(0)">上一页</a></li><li class="next"><a class="wxHideOutline wxNotFloat" id="<%gridID%>_Next" href="javascript:void(0)">下一页</a></li></ul><span class="goPager"><input id="<%gridID%>_SetPage" type="text" class="form-control wxPagerInput"><button id="<%gridID%>_GoPage" class="btn btn-default wxPagerBtn" type="button">Go</button></span></span></div></div>',
+	//微信用的模版
+	_tpl: '<div id="<%gridID%>_MainBox"><div id="<%gridID%>_GridBox" class="wxGridTop"><div id="<%gridID%>_GridTitle" class="wxGridTitle wxUnshown">表格标题</div><div id="<%gridID%>_mask" class="wxLoadMask"><div class="wxLoadInfo"><img src="http://wx.itil.com/image/ajax-loader-3.gif"></div></div></div><div id="<%gridID%>_PageBar" class="wxGridBottom"><span class="wxPagerInfo" id="<%gridID%>_PageInfo">第 <span id="<%gridID%>_CurrentPage">0</span> / <span id="<%gridID%>_TotalPage">0</span> 页</span><span class="wxPager"><ul class="pager wxPagerHack wxPagerNormalGroup"><li class="previous"><a class="wxHideOutline wxNotFloat" id="<%gridID%>_Previous" href="javascript:void(0)">上一页</a></li><li class="next"><a class="wxHideOutline wxNotFloat" id="<%gridID%>_Next" href="javascript:void(0)">下一页</a></li></ul><span class="goPager"><input id="<%gridID%>_SetPage" type="text" class="form-control wxPagerInput"><button id="<%gridID%>_GoPage" class="btn btn-default wxPagerBtn" type="button">Go</button></span></span></div></div>',
 
 	/**
 	 * 字段对齐
@@ -114,7 +130,7 @@ WXJS.UI.GRID = {
 	 * @type String
 	 */
 	_afterQueue: [],
-
+                                 
 	/**
 	 * 设置表格全局配置
 	 */
@@ -143,8 +159,8 @@ WXJS.UI.GRID = {
 	 *		}
 	 *	});
 	 */
-	getGlobalConfig: function(baseKey, key){
-		return this._config[baseKey][key];
+	getGlobalConfig: function(){
+		return this._config;
 	},
 
 	/**
@@ -248,6 +264,7 @@ WXJS.UI.GRID = {
  *	}
  *
  *	var myGrid = WXJS.UI.GRID.create(opt);
+ *	var myGrid = $('#box').fastUiGrid(opt);
  *
  * @return Object 返回 WXJS.UI.GRIDOBJECT
  * @constructor
@@ -263,7 +280,7 @@ WXJS.UI.GRIDOBJECT = function(opt){
 	var init = (typeof opt['init'] == 'boolean') ? opt['init'] : true;
 
 	//渲染目标不存在则返回
-	dom = (typeof opt['render'] == 'string') ? WXJS.TOOL.$(opt['render']) : (typeof opt['render'] == 'object') ? opt['render'] : null;
+	dom = (typeof opt['render'] == 'string') ? $('#' + opt['render']) : (typeof opt['render'] == 'object') ? opt['render'] : null;
 	if(dom == null) return;
 
 	me.config = {
@@ -284,7 +301,13 @@ WXJS.UI.GRIDOBJECT = function(opt){
 		baseParams: {},
 
 		//全局事件
-		globalEvent: []
+		globalEvent: [],
+
+		/**
+		 * 表格ajax字段配置
+		 * @type String
+		 */
+		ajaxConfig: {}
 	}
 
 	//表格渲染前运行
@@ -309,8 +332,8 @@ WXJS.UI.GRIDOBJECT = function(opt){
 /**
  * 渲染表格框架
  */
-WXJS.UI.GRIDOBJECT.prototype.renderTpl = function(dom){
-	dom.innerHTML = WXJS.UI.GRID._tpl.replace(/<%gridID%>/g, this._getConfig('id'));
+WXJS.UI.GRIDOBJECT.prototype.renderTpl = function($dom){
+	$dom.html(WXJS.UI.GRID._tpl.replace(/<%gridID%>/g, this._getConfig('id')));
 }
 
 /**
@@ -322,6 +345,7 @@ WXJS.UI.GRIDOBJECT.prototype.init = function(opt){
 	//是否要去增加mutiSelect框
 	!opt.mutiSelect || mutiSelectInit();
 
+	//必选配置
 	this._setConfig('id', opt.id);
 	this._setConfig('map', opt.map);
 	this._setConfig('ajaxUrl', opt.ajaxUrl);
@@ -334,16 +358,19 @@ WXJS.UI.GRIDOBJECT.prototype.init = function(opt){
 	//设置遮罩id
 	this._setConfig('maskId', [opt.id, '_mask'].join(''));
 
+	//可选配置
+	opt.ajaxConfig ? this._setConfig('ajaxConfig', opt.ajaxConfig) : this._setConfig('ajaxConfig', WXJS.UI.GRID.getGlobalConfig());
+
 	//多选框配置
 	function mutiSelectInit(){
 		opt.map.unshift({
 			'index': 'checkbox', 
-			'name': '<div style="text-align:center;"><a href="javascript:void(0)" id="' + opt.id + '_SelectAll">全选</a></br><a href="javascript:void(0)" id="' + opt.id + '_SelectNone">反选</a><div>', 
+			'name': '<div style="text-align:center;"><input type="checkbox" id="' + opt.id + '_MutiSelect"/><div>', 
 			'ignore': true, 
 			'align': 'center', 
 			'style': 'width: 55px;', 
-			'renderer': function(val){
-				return ['<input ', 'class="', opt.id, '_SelectBox', '"', ' type="checkbox" />'].join('');
+			'renderer': function(val, row){
+				return ['<input ', 'class="', opt.id, '_SelectBox', '"', ' type="checkbox" ', (row._select ? 'checked' : ''), '/>'].join('');
 			},
 			'event': {
 				//本列中不触发点击行事件
@@ -355,27 +382,43 @@ WXJS.UI.GRIDOBJECT.prototype.init = function(opt){
 
 		//设置行事件要提供方法（需重构）
 		me._getConfig('globalEvent').push(function(e, data, tr){
-			WXJS.TOOL.jq(tr).find('.' + opt.id + '_SelectBox')[0].checked = !WXJS.TOOL.jq(tr).find('.' + opt.id + '_SelectBox')[0].checked; //太sb了
+			var index = $(tr).index(),
+				tmpData = me._getConfig('data'),
+				checked = $(tr).find('.' + opt.id + '_SelectBox')[0].checked;
+
+			tmpData[index]['_select'] = !checked;
+			me._setConfig('data', tmpData);
+
+			$(tr).find('.' + opt.id + '_SelectBox')[0].checked = !checked; //太sb了
 		});
 
 		WXJS.UI.GRID.addAfter(function(){
-			WXJS.TOOL.jq('#' + opt.id + '_SelectAll').bind('click', function(){
-				WXJS.TOOL.jq('.' + opt.id + '_SelectBox').each(function(){
-					this.checked = true;
+			$('#' + opt.id + '_MutiSelect').bind('click', function(){
+				var checked = this.checked,
+					tmpData = me._getConfig('data');
+
+				$('.' + opt.id + '_SelectBox').each(function(e){
+					var $tr = $(this).parent().parent();
+					if($tr.css('display') == 'none') return true;
+
+					this.checked = checked;
+					tmpData[e]['_select'] = checked;
 				})
 			});
 
-			WXJS.TOOL.jq('#' + opt.id + '_SelectNone').bind('click', function(){
-				WXJS.TOOL.jq('.' + opt.id + '_SelectBox').each(function(){
-					this.checked = false;
-				})
+			$('.' + opt.id + '_SelectBox').bind('click', function(){
+				var eq = $(this).parent().parent().index(),
+					tmpData = me._getConfig('data');
+
+				tmpData[eq]['_select'] = this.checked;
+				me._setConfig('data', tmpData);
 			})
 		})
 
 		WXJS.UI.GRID.extend({
 			'getSelectColumns': function(){
 				var cols = [];
-				WXJS.TOOL.jq('.' + opt.id + '_SelectBox').each(function(num){
+				$('.' + opt.id + '_SelectBox').each(function(num){
 					!this.checked || cols.push(me._getRowData(num));
 				})
 
@@ -391,43 +434,45 @@ WXJS.UI.GRIDOBJECT.prototype.init = function(opt){
  * 2、填thead数据
  * 3、渲染表格入dom
  * 4、表格头加排序事件
- * 备注
- * 这里要封装js底层方法
  */
 WXJS.UI.GRIDOBJECT.prototype.gridInit = function(){
-	var me  = this;
-	//-------------------------------------------下面要重构---------------------------------------
-	var buff = document.createDocumentFragment();
-	var table = document.createElement('table');
-	var thead = document.createElement('thead');
-	var tbody = document.createElement('tbody');
+	var me  = this,
 
-	var theadId = [me._getConfig('id'), '_GridThead'].join('');
+		$buff = $('<table></table>'),
+		$thead = $('<thead></thead>'),
+		$tbody = $('<tbody><tr><td colspan="200">没有记录</td></tr></tbody>'), //默认插一条空记录
 
-	table.id = me._getConfig('id');
-	table.className = WXJS.UI.GRID._commonStyle;
-	thead.innerHTML = me._generateThead(me._getConfig('map'));
+		theadId = [me._getConfig('id'), '_GridThead'].join(''),
+		tbodyId = [me._getConfig('id'), '_GridTbody'].join('');
 
-	me.thead = thead;
-	me.tbody = tbody;
+	$buff.attr('id', me._getConfig('id')).addClass(WXJS.UI.GRID._commonStyle);
+	$tbody.attr('id', tbodyId);
 
-	table.appendChild(thead);
-	table.appendChild(tbody);
+	$thead.html(me._generateThead(me._getConfig('map')));
 
-	buff.appendChild(table);
-	WXJS.TOOL.$(me._getConfig('id') + '_GridBox').appendChild(buff);
-	//-------------------------------------------重构 end---------------------------------------
+	$buff.append($thead).append($tbody);
+	$('#' + me._getConfig('id') + '_GridBox').append($buff);
 
 	//设置标题如果有的话
-	if(this._getConfig('title')){
-		WXJS.TOOL.$(this._getConfig('id') + '_GridTitle').innerHTML = this._getConfig('title');
+	!this._getConfig('title') || $('#' + me._getConfig('id') + '_GridTitle').html(me._getConfig('title'));
+
+	//设置容器固定高度
+	if(this._getConfig('height')){
+		$('#' + this._getConfig('id')).parent().css('height', this._getConfig('height') + 'px');
+		$('#' + this._getConfig('id')).parent().css('overflow-y', auto);
 	}
 
-	//WXJS.TOOL.jq('#' + theadId + ' .' + WXJS.UI.GRID._sortOperator).bind('click', theadSort); //对排序按钮加事件
-	WXJS.TOOL.jq('#' + theadId + ' .' + WXJS.UI.GRID._sortStyle).bind('click', theadSort); //对th加事件
+	//如果pageSize为0则代表不分页，分页栏取消，同时设置所有排序为本体排序
+	if(!this._getConfig('pageSize')){
+		$('#' + this._getConfig('id') + '_PageBar').hide();
+		me._setConfig('sortType', 'local');
+	}
+
+	$('#' + theadId + ' .' + WXJS.UI.GRID._sortStyle).bind('click', theadSort); //对th加事件
 
 	//绑定排序事件
 	function theadSort(){
+		/* ---------------------------------- 以下这段是用来设置搜索状态（即样式变化），和搜索逻辑无关 ------------------- */
 		var sortStatus = this.getAttribute('data-sort'),
 			newStatus = '',
 			newStyle = '';
@@ -435,8 +480,8 @@ WXJS.UI.GRIDOBJECT.prototype.gridInit = function(){
 		//页数置为1
 		me._setConfig('currentPage', 1);
 
-		WXJS.TOOL.jq('#' + theadId + ' span').each(function(){
-			WXJS.TOOL.jq(this).hasClass(WXJS.UI.GRID._displayDisable) || WXJS.TOOL.jq(this).addClass(WXJS.UI.GRID._displayDisable)
+		$('#' + theadId + ' span').each(function(){
+			$(this).hasClass(WXJS.UI.GRID._displayDisable) || $(this).addClass(WXJS.UI.GRID._displayDisable)
 			this.setAttribute('data-sort', '');
 		})
 
@@ -445,13 +490,39 @@ WXJS.UI.GRIDOBJECT.prototype.gridInit = function(){
 
 		this.setAttribute('data-sort', newStatus);
 
-		WXJS.TOOL.jq(this).find('.' + newStyle).removeClass(WXJS.UI.GRID._displayDisable);
+		$(this).find('.' + newStyle).removeClass(WXJS.UI.GRID._displayDisable);
+		/* ----------------------------------------------------- 结束 ----------------------------------------------------- */
 
-		//设置配置发请求
-		me._setConfig('sort', this.getAttribute('data-index'));
-		me._setConfig('dir', newStatus);
+		//判断是本地搜索还是远程搜索
+		if(me._getConfig('sortType') == 'local'){
+			var map = me._getConfig('map'),
+				index = this.getAttribute('data-index');
+				sortFunc = null,
+				tmpData = me._getConfig('data');
 
-		me.reload();
+			for(var i = 0; i < map.length; i++){
+				//自动补一个event成员（要重构，不应该在这里补，而在init补）
+				map[i]['event'] = map[i]['event'] || {};
+				if(map[i]['index'] == index){
+					sortFunc = (map[i]['event']['sort']) ? map[i]['event']['sort'] : function(m, n){
+						//默认排序方法（就普通return）
+						return m[index] < n[index];
+					};
+					break;
+				}
+			}
+
+			tmpData.sort(sortFunc);
+
+			me._setConfig('data', (newStatus == 'desc') ? tmpData : tmpData.reverse());
+			me._load()
+		}else{
+			//设置配置发请求
+			me._setConfig('sort', this.parentNode.getAttribute('data-index'));
+			me._setConfig('dir', newStatus);
+			
+			me.reload();
+		}
 	}
 }
 
@@ -463,21 +534,33 @@ WXJS.UI.GRIDOBJECT.prototype.gridInit = function(){
 WXJS.UI.GRIDOBJECT.prototype._generateThead = function(map){
 	var buff = [], 
 		tmp, 
-		sortStyle,
-		widthStyle, 
-		style, 
-		i;
+		sortStyle = '',
+		widthStyle = '', 
+		sortSpecStyle = '',
+		style;
 
-	for(i = 0; i < map.length; i++){
+	for(var i = 0; i < map.length; i++){
 		tmp = map[i]['name'] || map[i]['index'];
 
-		sortStyle = (typeof map[i]['sort'] == 'undefined') ? '' : WXJS.UI.GRID._sortStyle;
+		//搜索框
+		!map[i]['search'] || (
+			tmp = [
+				'<input data-index="', 
+				map[i]['index'], 
+				'" type="text" class="form-control ', this._getConfig('id'), '_SearchInput', '" style="display: inline-block; width: 75%;" placeholder="', 
+				tmp, 
+				'"/>'
+			].join('')
+		)
+
+		!map[i]['search'] || (sortSpecStyle = WXJS.UI.GRID._wxSortTextStyle);
+		!map[i]['sort'] || (sortStyle = WXJS.UI.GRID._sortStyle);
 		//style属性需要支持多规则，不应该仅仅支持width，需要改进
-		widthStyle = (typeof map[i]['width'] == 'undefined') ? '' : [parseInt(map[i]['width']), 'px'].join('');
+		!map[i]['width'] || (widthStyle = [parseInt(map[i]['width']), 'px'].join(''));
 
 		buff.push(
 			[
-				'<th class="wxThead ', sortStyle,
+				'<th class="wxThead ', sortStyle, ' ', sortSpecStyle,
 				'" style="width: ', widthStyle, 
 				'" data-index="', map[i]['index'], 
 				'">'
@@ -492,7 +575,7 @@ WXJS.UI.GRIDOBJECT.prototype._generateThead = function(map){
 		buff.push('</th>');
 	}
 
-	return ['<thead><tr id="', this._getConfig('id') ,'_GridThead">', buff.join(''), '</tr></thead>'].join('');
+	return ['<tr id="', this._getConfig('id') ,'_GridThead">', buff.join(''), '</tr>'].join('');
 }
 
 /**
@@ -505,21 +588,41 @@ WXJS.UI.GRIDOBJECT.prototype._generateData = function(data, map){
 	var buff = [], tmp = '',
 		mapLength = map.length,
 		style,
-		align;
+		align,
+		renderType, //渲染类型 对象 or 数组
+		raw; //真实数据
+	
+	//没有记录时插空记录
+	if(data.length == 0){
+		buff.push([
+			'<tr><td colspan="200">没有记录</td></tr>'
+		]);
+	}
 
 	for(var i = 0; i < data.length; i++){
+		renderType = data[i] instanceof Array;
+
 		buff.push([
 			'<tr',
 			' class="', this._getConfig('id'), '_GridTr"',
+			' style="display: ', (data[i]['_filter'] ? 'none' : ''), '"',
 			'>'
 		].join(''));
 
 		for(var j = 0; j < mapLength; j++){
-			if(typeof data[i][map[j]['index']] != 'undefined' || map[j]['ignore'] == true){
-				if(typeof map[j]['renderer'] == 'function'){
-					tmp = (map[j]['renderer'])(data[i][map[j]['index']]);
+			raw = renderType ? data[i][j] : data[i][map[j]['index']];
+
+			if(raw || renderType || map[j]['ignore']){ //ignore的作用是不管你有没有数据，都必须渲染
+				if(typeof map[j]['renderer'] == 'function'){ 
+					/*
+					 * function(val, row){
+					 *     console.log(val);
+					 *     console.log(row.id);
+					 * }
+					 */
+					tmp = (map[j]['renderer'])(raw, data[i]);
 				}else{
-					tmp = data[i][map[j]['index']];
+					tmp = raw;
 				}
 			}
 
@@ -529,7 +632,8 @@ WXJS.UI.GRIDOBJECT.prototype._generateData = function(data, map){
 			buff.push([
 				'<td',
 				' style="', style, align, '"',
-				' class="', this._getConfig('id'), '_GridTd_', j, '">', 
+				' class="', this._getConfig('id'), '_GridTd_', j, '"', 
+				' data-index="', map[j]['index'], '">', 
 				tmp, 
 				'</td>'
 			].join(''))
@@ -578,7 +682,7 @@ WXJS.UI.GRIDOBJECT.prototype._getRowData = function(index){
  *			c: 'd'
  *		}
  *	}
- *	myGrid.reload(condition);
+ *	myGrid.reload(condition, true);
  */
 WXJS.UI.GRIDOBJECT.prototype.reload = function(condition, flag){
 	var me = this,
@@ -595,7 +699,7 @@ WXJS.UI.GRIDOBJECT.prototype.reload = function(condition, flag){
 	//是否初始化请求
 	!flag || ajaxInit();
 
-	WXJS.TOOL.ajax({
+	$.ajax({
 		type: 'POST',
 		url: [
 			this._getConfig('ajaxUrl'),
@@ -608,17 +712,16 @@ WXJS.UI.GRIDOBJECT.prototype.reload = function(condition, flag){
 		dataType: 'json',
 		data: this.getProQueryStr() + '&' + parseCondition()['post'],
 		success: function(data){
-	    	me._setConfig('data', getReceiveData(data, WXJS.UI.GRID.getGlobalConfig('receiveParams', 'data')));
-	    	me._setConfig('totalCount', parseInt(getReceiveData(data, WXJS.UI.GRID.getGlobalConfig('receiveParams', 'total'))));
+			me._setConfig('data', getReceiveData(data, me._getConfig('ajaxConfig')['receiveParams']['data']));
+
+			//如果不分页则不需设置totalCount字段
+    		!me._getConfig('pageSize') || me._setConfig('totalCount', parseInt(getReceiveData(data, me._getConfig('ajaxConfig')['receiveParams']['total'])));
+	    	
 	    	me._load();
 	    	me._renderPageInfo();
-	    	me._bind();
 
 	    	_setBtnDisable();
 	    	maskHide();
-
-	    	//表格渲染结束运行
-	    	me.afterInit();
 		}
 	});
 
@@ -650,8 +753,15 @@ WXJS.UI.GRIDOBJECT.prototype.reload = function(condition, flag){
 		}
 	}
 
-	//支持多级字段: {'data': {'result': {'aadata': {}}} key: 'data.result.aadata'
+	/* 
+	 * 支持多级字段: {'data': {'result': {'aadata': {}}} key: 'data.result.aadata'
+	 * 支持直接返回数组 [1, 2, 3] key = ''
+	 */ 
 	function getReceiveData(rawData, key){
+		if(key == ''){
+			return rawData;
+		}
+
 		if(key.indexOf('.') < 0){
 			return rawData[key];
 		}
@@ -669,14 +779,14 @@ WXJS.UI.GRIDOBJECT.prototype.reload = function(condition, flag){
 	//读取后设置上下页状态
 	function _setBtnDisable(){
 		if(me._getConfig('currentPage') == 1){
-			WXJS.TOOL.jq('#' + Previous).parent().addClass(WXJS.UI.GRID._disableStyle);
+			$('#' + Previous).parent().addClass(WXJS.UI.GRID._disableStyle);
 		}else{
-			WXJS.TOOL.jq('#' + Previous).parent().removeClass(WXJS.UI.GRID._disableStyle);
+			$('#' + Previous).parent().removeClass(WXJS.UI.GRID._disableStyle);
 		}
 		if(me._getConfig('currentPage') == totalPage || 0 == totalPage){
-			WXJS.TOOL.jq('#' + Next).parent().addClass(WXJS.UI.GRID._disableStyle);
+			$('#' + Next).parent().addClass(WXJS.UI.GRID._disableStyle);
 		}else{
-			WXJS.TOOL.jq('#' + Next).parent().removeClass(WXJS.UI.GRID._disableStyle);
+			$('#' + Next).parent().removeClass(WXJS.UI.GRID._disableStyle);
 		}
 	}
 
@@ -688,11 +798,11 @@ WXJS.UI.GRIDOBJECT.prototype.reload = function(condition, flag){
 	}
 
 	function maskShow(){
-		WXJS.TOOL.jq('#' + me._getConfig('maskId')).show();
+		$('#' + me._getConfig('maskId')).show();
 	}
 
 	function maskHide(){
-		WXJS.TOOL.jq('#' + me._getConfig('maskId')).hide();
+		$('#' + me._getConfig('maskId')).hide();
 	}
 }
 
@@ -701,7 +811,12 @@ WXJS.UI.GRIDOBJECT.prototype.reload = function(condition, flag){
  */
 WXJS.UI.GRIDOBJECT.prototype._load = function(){
 	var buff = this._generateData(this._getConfig('data'), this._getConfig('map'));
-	this.tbody.innerHTML = buff;
+	
+	$('#' + this._getConfig('id') + '_GridTbody').html(buff);
+	
+	//表格渲染结束运行
+	this._bind();
+	this.afterInit();
 }
 
 /**
@@ -709,14 +824,15 @@ WXJS.UI.GRIDOBJECT.prototype._load = function(){
  */
 WXJS.UI.GRIDOBJECT.prototype.getBaseQueryStr = function(){
 	var baseBuff = [
-		WXJS.UI.GRID.getGlobalConfig('sendParams', 'start'), '=', (this._getConfig('currentPage') - 1) * this._getConfig('pageSize'), 
+		this._getConfig('ajaxConfig')['sendParams']['start'], '=', (this._getConfig('currentPage') - 1) * this._getConfig('pageSize'), 
 		'&', 
-		WXJS.UI.GRID.getGlobalConfig('sendParams', 'limit') , '=', this._getConfig('pageSize'),
+		this._getConfig('ajaxConfig')['sendParams']['limit'] , '=', this._getConfig('pageSize'),
 		'&',
-		WXJS.UI.GRID.getGlobalConfig('sendParams', 'sort'), '=', this._getConfig('sort'),
+		this._getConfig('ajaxConfig')['sendParams']['sort'], '=', this._getConfig('sort'),
 		'&',
-		WXJS.UI.GRID.getGlobalConfig('sendParams', 'dir'), '=', this._getConfig('dir')
+		this._getConfig('ajaxConfig')['sendParams']['dir'], '=', this._getConfig('dir')
 	].join('');
+	
 	return baseBuff;
 }
 
@@ -726,14 +842,6 @@ WXJS.UI.GRIDOBJECT.prototype.getBaseQueryStr = function(){
  * 新方法中默认返回空，如需要自定义则用gird.extend('getProQueryStr': func)
  */
 WXJS.UI.GRIDOBJECT.prototype.getProQueryStr = function(){
-	/*var proBuff = [],
-		params = this._getConfig('baseParams');
-
-	for(var key in params){
-		proBuff.push([key, '=', params[key]].join(''));
-	}
-
-	return proBuff.join('&');*/
 	return '';
 }
 
@@ -752,12 +860,12 @@ WXJS.UI.GRIDOBJECT.prototype._bind = function(){
 
 		//再封装一层闭包传入i防止闭包传入引用
 		(function(index, globalEvents){
-			WXJS.TOOL.jq(['.', girdId, '_GridTr'].join('')).bind('click', (function(e){
+			$(['.', girdId, '_GridTr'].join('')).bind('click', (function(e){
 				packageEvent(e, this, globalEvents[index]);
 			}));
 		})(i, globalEvents)
 		
-		cursorFlag || WXJS.TOOL.jq('#' + girdId + ' tbody').css('cursor', 'pointer');
+		cursorFlag || $('#' + girdId + ' tbody').css('cursor', 'pointer');
 		cursorFlag = true;
 	}
 
@@ -765,15 +873,17 @@ WXJS.UI.GRIDOBJECT.prototype._bind = function(){
 	for(var i = 0; i < this._getConfig('map').length; i++){
 		if(typeof this._getConfig('map')[i]['event'] == 'object'){
 			for(var j in this._getConfig('map')[i]['event']){
+				if(j == 'sort') continue;
+				
 				//再封装一层闭包传入i, j防止闭包传入引用
 				(function(i, j, me){
-					WXJS.TOOL.jq(['.', girdId, '_GridTd_', i].join('')).bind(j, (function(e){
+					$(['.', girdId, '_GridTd_', i].join('')).bind(j, (function(e){
 						packageEvent(e, this, me._getConfig('map')[i]['event'][j])
 					}));
 				})(i, j, me)
 
 				//阻止事件传递
-				WXJS.TOOL.jq(['.', girdId, '_GridTd_', i].join('')).bind(j, function(e){
+				$(['.', girdId, '_GridTd_', i].join('')).bind(j, function(e){
 					e.stopPropagation();
 				})
 				//加手型
@@ -785,7 +895,7 @@ WXJS.UI.GRIDOBJECT.prototype._bind = function(){
 	//恶心的逻辑获取事件列的父tr，计算相对位置并返回原生数据（要重构）
 	function packageEvent(e, obj, func){
 		var nodeName = obj.nodeName.toLowerCase(),
-			index = (nodeName == 'td' ? WXJS.TOOL.jq(obj).parent().index() : WXJS.TOOL.jq(obj).index()),
+			index = (nodeName == 'td' ? $(obj).parent().index() : $(obj).index()),
 
 			rowData = me._getRowData(index);
 
@@ -813,13 +923,13 @@ WXJS.UI.GRIDOBJECT.prototype.pageInit = function(){
 
 	//用闭包传入不同的this引用
 	(function(me){
-		WXJS.TOOL.bind(Previous, 'click', function(){
+		$('#' + Previous).click(function(){
 			previous(me, this);
 		});
-		WXJS.TOOL.bind(Next, 'click', function(){
+		$('#' + Next).click(function(){
 			next(me, this);
 		});
-		WXJS.TOOL.bind(GoPage, 'click', function(){
+		$('#' + GoPage).click(function(){
 			goPage(me);
 		});
 	})(me)
@@ -845,12 +955,12 @@ WXJS.UI.GRIDOBJECT.prototype.pageInit = function(){
 	}
 
 	function _checkDisable(obj){
-		return !WXJS.TOOL.jq(obj).parent().hasClass(WXJS.UI.GRID._disableStyle)
+		return !$(obj).parent().hasClass(WXJS.UI.GRID._disableStyle)
 	}
 
 	function goPage(me){
 		var totalPage = Math.ceil(me._getConfig('totalCount') / me._getConfig('pageSize')),
-			page = WXJS.TOOL.jq('#' + me._getConfig('id') + '_SetPage').val(),
+			page = $('#' + me._getConfig('id') + '_SetPage').val(),
 			currentPage = parseInt(page);
 
 		if(currentPage < 1 || currentPage > totalPage || isNaN(currentPage)){
@@ -880,13 +990,13 @@ WXJS.UI.GRIDOBJECT.prototype._renderPageInfo = function(){
 		pageStart = (this._getConfig('currentPage') - 1) * this._getConfig('pageSize') + 1;
 		totalPage = Math.ceil(this._getConfig('totalCount') / this._getConfig('pageSize'));
 
-	WXJS.TOOL.jq('#' + currentPage).html(this._getConfig('currentPage'));
-	WXJS.TOOL.jq('#' + TotalPage).html(totalPage);
-	WXJS.TOOL.jq('#' + TotalCount).html(this._getConfig('totalCount'));
-	WXJS.TOOL.jq('#' + PageStart).html(pageStart);
+	$('#' + currentPage).html(this._getConfig('currentPage'));
+	$('#' + TotalPage).html(totalPage);
+	$('#' + TotalCount).html(this._getConfig('totalCount'));
+	$('#' + PageStart).html(pageStart);
 
 	//最后一页的判断逻辑
-	WXJS.TOOL.jq('#' + PageLimit).html((this._getConfig('currentPage') == totalPage) ? this._getConfig('totalCount') : pageStart + this._getConfig('pageSize') - 1);
+	$('#' + PageLimit).html((this._getConfig('currentPage') == totalPage) ? this._getConfig('totalCount') : pageStart + this._getConfig('pageSize') - 1);
 }
 
 //表格扩展相关api----------------------------------------------------------------------------
@@ -912,23 +1022,49 @@ WXJS.UI.GRIDOBJECT.prototype.afterInit = function(){
 	}
 }
 
-/**
- * 微信工具方法（后续要分离逻辑）
- * 备注：
- * 需要做jquery解耦
- */
-WXJS.TOOL = {
-	$: function(dom){
-		return document.getElementById(dom);
-	},
+WXJS.UI.GRIDOBJECT.prototype.filter = function(str, arr){
+	var $tr = $('.' + me._getConfig('id') + '_GridTr'),
+		tmpData = me._getConfig('data');
 
-	jq: $,
-
-	ajax: function(opt){
-		return $.ajax(opt);
-	},
-
-	bind: function(target, evt, func){
-		return $('#' + target).bind(evt, func);
+	//清除过滤
+	if(str == ''){
+		$tr.show();
+		for(var i = 0; i < tmpData.length; i++){
+			tmpData[i]['_filter'] = false;
+		}
+		return;
 	}
+
+	$tr.each(function(e){
+		var $td = $(this).children(),
+			flag = true;
+		
+		$td.each(function(){
+			if((typeof arr == 'string' && $(this).attr('data-index') == arr) || (typeof arr == 'object' && $.inArray($(this).attr('data-index'), arr))){
+				if($(this).text().indexOf(str) >= 0){
+					flag = false;
+					return true;
+				}
+			}
+		});
+
+		!flag || $(this).hide();
+		tmpData[e]['_filter'] = flag;
+	})
+
+	me._setConfig('data', tmpData);
 }
+
+/**
+ * 封装jQuery接口
+ */
+!function($){
+	$.fn.fastUiGrid = function(opt){
+		opt.render = $(this);
+
+		return WXJS.UI.GRID.create(opt);
+	}
+
+	$.fastUiGridApi = WXJS.UI.GRID;
+
+}(jQuery)
